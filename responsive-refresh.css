@@ -160,18 +160,22 @@ em {
 }
 
 .ribbon {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 74px;
-  gap: clamp(30px, 5vw, 72px);
+  gap: clamp(20px, 4vw, 56px);
   padding-block: 22px;
+  padding-inline: var(--page-gutter);
   color: #173f30;
   font-size: clamp(16px, 1.35vw, 19px);
   font-weight: 700;
   letter-spacing: -.01em;
+  text-align: center;
 }
 
-.ribbon b {
-  color: #315d45;
-  font-size: 26px;
+.ribbon span {
+  min-width: 0;
+  line-height: 1.45;
 }
 
 .hero-photo {
@@ -181,11 +185,6 @@ em {
 
 .hero-photo > img {
   border-radius: 20px;
-}
-
-.flower {
-  right: 4px;
-  font-size: 82px;
 }
 
 .group-grid article {
@@ -761,17 +760,12 @@ em {
     max-width: calc(100% - 36px);
   }
 
-  .flower {
-    right: 8px;
-  }
-
   .ribbon {
     width: 100%;
     min-height: 0;
-    padding: 18px var(--page-gutter);
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 16px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 17px var(--page-gutter);
     overflow: visible;
     white-space: normal;
     text-align: center;
@@ -779,13 +773,8 @@ em {
     line-height: 1.4;
   }
 
-  .ribbon span:last-of-type,
-  .ribbon b:last-child {
-    display: inline;
-  }
-
-  .ribbon b {
-    font-size: 18px;
+  .ribbon span {
+    padding-block: 3px;
   }
 
   .food {
@@ -944,16 +933,6 @@ em {
 
   .group-grid article:last-child {
     grid-column: auto;
-  }
-
-  .ribbon {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .ribbon b {
-    transform: rotate(90deg);
   }
 
   .week-list article,
