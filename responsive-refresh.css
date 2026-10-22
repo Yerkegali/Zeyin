@@ -161,11 +161,13 @@ em {
 
 .ribbon {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: max-content auto max-content auto max-content;
   min-height: 74px;
   gap: clamp(20px, 4vw, 56px);
   padding-block: 22px;
   padding-inline: var(--page-gutter);
+  justify-content: center;
+  align-items: center;
   color: #173f30;
   font-size: clamp(16px, 1.35vw, 19px);
   font-weight: 700;
@@ -176,6 +178,12 @@ em {
 .ribbon span {
   min-width: 0;
   line-height: 1.45;
+}
+
+.ribbon b {
+  color: #315d45;
+  font-size: 26px;
+  line-height: 1;
 }
 
 .hero-photo {
@@ -775,6 +783,20 @@ em {
 
   .ribbon span {
     padding-block: 3px;
+  }
+
+  .ribbon b {
+    display: none;
+  }
+
+  .ribbon span:not(:last-of-type)::after {
+    display: inline-block;
+    margin-left: 10px;
+    color: #315d45;
+    content: "✳";
+    font-size: 18px;
+    line-height: 1;
+    vertical-align: .05em;
   }
 
   .food {
