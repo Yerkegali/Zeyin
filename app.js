@@ -1,4 +1,33 @@
-const toggle=document.querySelector('.menu-toggle');const nav=document.querySelector('nav');toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open)});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{toggle.setAttribute('aria-expanded','false');nav.classList.remove('open')}));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&nav.classList.contains('open')){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.focus()}});
+const header=document.querySelector('header');
+const toggle=document.querySelector('.menu-toggle');
+const nav=document.getElementById('navigation');
+const navLinks=[...nav.querySelectorAll('a[href^="#"]')];
+const desktopNavigation=matchMedia('(min-width: 1181px)');
+function setMenu(open,{restoreFocus=false}={}){
+ nav.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Навигация мәзірін жабу':'Навигация мәзірін ашу');toggle.querySelector('span').textContent=open?'×':'☰';
+ if(!open&&restoreFocus)toggle.focus();
+}
+toggle.addEventListener('click',()=>setMenu(toggle.getAttribute('aria-expanded')!=='true'));
+navLinks.forEach(link=>link.addEventListener('click',()=>setMenu(false)));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&nav.classList.contains('open'))setMenu(false,{restoreFocus:true})});
+document.addEventListener('click',event=>{if(nav.classList.contains('open')&&!header.contains(event.target))setMenu(false)});
+desktopNavigation.addEventListener?.('change',event=>{if(event.matches)setMenu(false)});
+
+function updateHeaderHeight(){document.documentElement.style.setProperty('--header-height',`${Math.ceil(header.getBoundingClientRect().height)}px`)}
+new ResizeObserver(updateHeaderHeight).observe(header);updateHeaderHeight();
+
+const navigationSections=navLinks.map(link=>document.querySelector(link.hash)).filter(Boolean);
+const visibleSections=new Map();
+function markActiveSection(){
+ const candidates=[...visibleSections.entries()].filter(([,entry])=>entry.isIntersecting).sort((a,b)=>b[1].intersectionRatio-a[1].intersectionRatio||Math.abs(a[1].boundingClientRect.top)-Math.abs(b[1].boundingClientRect.top));
+ const headerOffset=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height'))+32;let passedSection;
+ for(const section of navigationSections){if(section.getBoundingClientRect().top<=headerOffset)passedSection=section}
+ const active=candidates[0]?.[0]||passedSection||navigationSections[0];
+ navLinks.forEach(link=>{if(link.hash===`#${active.id}`)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});
+}
+const sectionObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>visibleSections.set(entry.target,entry));markActiveSection()},{rootMargin:'-12% 0px -58% 0px',threshold:[0,.15,.35,.6]});
+navigationSections.forEach(section=>sectionObserver.observe(section));
+window.addEventListener('hashchange',markActiveSection);markActiveSection();
 const menuDays=['Дүйсенбі','Сейсенбі','Сәрсенбі','Бейсенбі','Жұма'];
 const dayMeals=[
  [{image:'assets/menu/day-1-meal-1.jpg',text:"Қайнатылған жұмыртқа, қызанақ пен қияр, нан, компот"},{image:'assets/menu/day-1-meal-2.jpg',text:"Сұлы печеньесі"},{image:'assets/menu/day-1-meal-3.jpg',text:"Маш сорпасы, ет қосылған макарон, ашытылған қырыққабат, компот, нан"},{image:'assets/menu/day-1-meal-4.jpg',text:"Картоп қосылған бәліш"},{image:'assets/menu/day-1-meal-5.jpg',text:"Сұлы ботқасы, компот, нан"}],
@@ -16,30 +45,19 @@ function selectMenuDay(index){
 }
 menuDays.forEach((day,index)=>{const button=document.createElement('button');button.type='button';button.textContent=day;button.id='menu-day-'+index;button.setAttribute('role','tab');button.setAttribute('aria-controls','menu-panel');button.addEventListener('click',()=>selectMenuDay(index));button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?4:(index+(event.key==='ArrowRight'?1:4))%5;selectMenuDay(next);menuTabs.children[next].focus()});menuTabs.append(button)});selectMenuDay(0);
 
-// Temporary local team data. Replace image/name/role here when the verified
-// staff list is available; add, remove or reorder objects to update the grid.
 const teamMembers=[
- {id:'member-01',name:'',role:'Балабақша меңгерушісі',image:'assets/team/member-01.jpg'},
- {id:'member-02',name:'',role:'Әдіскер',image:'assets/team/member-02.jpg'},
- {id:'member-03',name:'',role:'Тәрбиеші',image:'assets/team/member-03.jpg'},
- {id:'member-04',name:'',role:'Тәрбиеші',image:'assets/team/member-04.jpg'},
- {id:'member-05',name:'',role:'Тәрбиеші',image:'assets/team/member-05.jpg'},
- {id:'member-06',name:'',role:'Логопед',image:'assets/team/member-06.jpg'},
- {id:'member-07',name:'',role:'Психолог',image:'assets/team/member-07.jpg'},
- {id:'member-08',name:'',role:'Музыка жетекшісі',image:'assets/team/member-08.jpg'},
- {id:'member-09',name:'',role:'Дене шынықтыру нұсқаушысы',image:'assets/team/member-09.jpg'},
- {id:'member-10',name:'',role:'Тәрбиеші көмекшісі',image:'assets/team/member-10.jpg'}
+ ...Array.from({length:8},(_,index)=>({id:`staff-${String(index+1).padStart(2,'0')}`,image:`assets/team/staff-${String(index+1).padStart(2,'0')}.jpeg`}))
 ];
 const teamTrack=document.getElementById('team-track');
 if(teamTrack){
- teamMembers.forEach(({id,name,role,image})=>{
+ teamMembers.forEach(({id,image},index)=>{
   const card=document.createElement('article');card.className='team-card';card.id=id;
-  const portrait=document.createElement('img');portrait.src=image;portrait.alt=name?`${name} — ${role}`:`${role} қызметіне арналған үлгілік фотосурет`;portrait.width=700;portrait.height=875;portrait.loading='lazy';portrait.decoding='async';
+  const portrait=document.createElement('img');portrait.src=image;portrait.alt=`Zeyin балабақшасы ұжымының ${index+1}-фотосуреті`;portrait.width=1024;portrait.height=1280;portrait.loading='lazy';portrait.decoding='async';
   const copy=document.createElement('div');copy.className='team-card-copy';
-  if(name){const heading=document.createElement('h3');heading.textContent=name;copy.append(heading)}
-  const roleLabel=document.createElement(name?'p':'h3');roleLabel.className='team-role';roleLabel.textContent=role;copy.append(roleLabel);
+  const roleLabel=document.createElement('h3');roleLabel.className='team-role';roleLabel.textContent='Біздің ұжым';copy.append(roleLabel);
   card.append(portrait,copy);teamTrack.append(card);
  });
+ teamTrack.closest('.team')?.querySelector('.section-notice')?.remove();
 }
 
 // Temporary event data. Set image to a local path to replace the emoji panel.
@@ -84,26 +102,64 @@ function initCarousel(carousel){
 }
 document.querySelectorAll('[data-carousel]').forEach(initCarousel);
 
-// The group cards intentionally contain neutral, editable placeholders until
-// the kindergarten confirms a description, headcount and group photograph.
 const groupGrid=document.querySelector('.group-grid');
 if(groupGrid){
- [...groupGrid.querySelectorAll('article')].forEach((card,index)=>{
-  const name=card.querySelector('h3').textContent;
-  const button=document.createElement('button');
-  button.type='button';button.className='group-card-button';
+ const groups=[
+  {slug:'balapan',name:'Балапан',age:'1.3–2 жас',photos:['balapan.PNG','balapan-sleeping-room.PNG']},
+  {slug:'botakan',name:'Ботақан',age:'1.3–2 жас',photos:['botakan.PNG','botakan-sleeping-room.PNG']},
+  {slug:'kulunshak',name:'Құлыншақ',age:'2–3 жас',photos:['kulunshak.PNG','kulunshak-sleeping-room.PNG']},
+  {slug:'samga',name:'Самға',age:'2–3 жас',photos:['samga.PNG','samga-sleeping-room.PNG']},
+  {slug:'baldyrgan',name:'Балдырған',age:'3–4 жас',photos:['baldyrgan.PNG','baldyrgan-sleeping-room.PNG']},
+  {slug:'kunshuak',name:'Күншуақ',age:'4–5 жас',photos:[]},
+  {slug:'bolashak',name:'Болашақ',age:'5–6 жас, мектепалды даярлық тобы',photos:[]}
+ ];
+ const columns=[document.createElement('div'),document.createElement('div')];
+ columns.forEach(column=>{column.className='group-column'});
+ const cards=[];
+ groups.forEach(({slug,name,age,photos},index)=>{
+  const card=document.createElement('article');card.className=`group-card group-tone-${index%5+1}`;card.style.setProperty('--group-order',index);
+  const button=document.createElement('button');button.type='button';button.className='group-card-button';
   button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls',`group-details-${index}`);
-  while(card.firstChild)button.append(card.firstChild);
-  button.insertAdjacentHTML('beforeend','<span class="group-toggle" aria-hidden="true">+</span>');
+  button.innerHTML=`<img class="group-logo" src="assets/groups/logos/processed/${slug}.png" alt="${name} тобының логотипі, ${age}" width="512" height="512" loading="lazy"><span class="group-card-copy"><strong>${name}</strong></span><span class="group-toggle" aria-hidden="true">+</span>`;
   const details=document.createElement('div');details.className='group-details';details.id=`group-details-${index}`;details.hidden=true;
-  details.innerHTML=`<div class="group-photo-placeholder" role="img" aria-label="${name} тобының фотосуреті кейін қосылады"><span aria-hidden="true">▧</span><small>Фотосурет кейін қосылады</small></div><div class="group-fields"><p><strong>Сипаттама</strong><span>Ақпарат кейін қосылады</span></p><p><strong>Балалар саны</strong><span>Ақпарат кейін қосылады</span></p></div>`;
+  details.innerHTML=photos.length?`<div class="group-photos">${photos.map((photo,photoIndex)=>`<figure><img src="assets/groups/${photo}" alt="${name} — ${photoIndex?'жатын бөлмесі':'ойын бөлмесі'}" width="1448" height="1086" loading="lazy" decoding="async"><figcaption>${photoIndex?'Жатын бөлмесі':'Ойын бөлмесі'}</figcaption></figure>`).join('')}</div>`:'<p class="group-photo-placeholder">Әзірге фотосуреттер жоқ</p>';
   button.addEventListener('click',()=>{
    const opening=button.getAttribute('aria-expanded')!=='true';
-   [...groupGrid.querySelectorAll('.group-card-button')].forEach(other=>{other.setAttribute('aria-expanded','false');other.closest('article').querySelector('.group-details').hidden=true});
    button.setAttribute('aria-expanded',String(opening));details.hidden=!opening;
+   button.querySelector('.group-toggle').textContent=opening?'−':'+';
   });
   card.append(button,details);
+  cards.push(card);
  });
+ const mobileGroups=matchMedia('(max-width: 650px)');
+ const arrangeGroups=()=>{
+  if(mobileGroups.matches)groupGrid.replaceChildren(...cards);
+  else{groupGrid.replaceChildren(...columns);cards.forEach((card,index)=>columns[index%2].append(card))}
+ };
+ mobileGroups.addEventListener?.('change',arrangeGroups);arrangeGroups();
+}
+
+const roomSlides=[
+ ['assets/groups/balapan.PNG','Балапан — Ойын бөлмесі'],['assets/groups/balapan-sleeping-room.PNG','Балапан — Жатын бөлмесі'],
+ ['assets/groups/botakan.PNG','Ботақан — Ойын бөлмесі'],['assets/groups/botakan-sleeping-room.PNG','Ботақан — Жатын бөлмесі'],
+ ['assets/groups/kulunshak.PNG','Құлыншақ — Ойын бөлмесі'],['assets/groups/kulunshak-sleeping-room.PNG','Құлыншақ — Жатын бөлмесі'],
+ ['assets/groups/samga.PNG','Самға — Ойын бөлмесі'],['assets/groups/samga-sleeping-room.PNG','Самға — Жатын бөлмесі'],
+ ['assets/groups/baldyrgan.PNG','Балдырған — Ойын бөлмесі'],['assets/groups/baldyrgan-sleeping-room.PNG','Балдырған — Жатын бөлмесі'],
+ ['assets/groups/montessori-01.jpeg','Монтессори бөлмесі'],['assets/groups/montessori-02.jpeg','Монтессори кеңістігі']
+];
+const roomGallery=document.querySelector('.room-gallery');
+if(roomGallery&&roomSlides.length){
+ const image=roomGallery.querySelector('#room-gallery-image');const caption=roomGallery.querySelector('#room-gallery-caption');
+ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');let current=0;let timer;
+ const preload=index=>{const preloadImage=new Image();preloadImage.src=roomSlides[(index+roomSlides.length)%roomSlides.length][0]};
+ const show=index=>{current=(index+roomSlides.length)%roomSlides.length;const [src,label]=roomSlides[current];image.classList.add('is-changing');const swap=()=>{image.src=src;image.alt=label.toLowerCase();caption.textContent=label;image.classList.remove('is-changing');preload(current+1);preload(current-1)};if(reducedMotion.matches)swap();else setTimeout(swap,120)};
+ const stop=()=>{clearInterval(timer);timer=undefined};
+ const start=()=>{stop();if(!reducedMotion.matches&&!document.hidden)timer=setInterval(()=>show(current+1),3000)};
+ const move=step=>{show(current+step);start()};
+ roomGallery.querySelector('[data-room-prev]').addEventListener('click',()=>move(-1));roomGallery.querySelector('[data-room-next]').addEventListener('click',()=>move(1));
+ roomGallery.addEventListener('pointerenter',stop);roomGallery.addEventListener('pointerleave',start);roomGallery.addEventListener('focusin',stop);roomGallery.addEventListener('focusout',event=>{if(!roomGallery.contains(event.relatedTarget))start()});
+ document.addEventListener('visibilitychange',()=>document.hidden?stop():start());reducedMotion.addEventListener?.('change',start);
+ show(0);start();
 }
 
 // Coordinates come from the route target attached to the verified 2GIS object
@@ -133,6 +189,12 @@ photoDialog.addEventListener('click',event=>{if(event.target===photoDialog)close
 photoDialog.addEventListener('close',()=>{document.body.style.overflow='';photoOpener?.focus()});
 photoImage.addEventListener('click',()=>photoImage.classList.toggle('zoomed'));
 const enquiryForm=document.getElementById('enquiry-form');
+const groupSelect=document.getElementById('group');
+if(groupSelect){
+ const names=['Балапан','Ботақан','Құлыншақ','Самға','Балдырған','Күншуақ','Болашақ'];
+ const help=groupSelect.lastElementChild;groupSelect.replaceChildren(groupSelect.firstElementChild);
+ names.forEach(name=>{const option=document.createElement('option');option.textContent=name;groupSelect.append(option)});groupSelect.append(help);
+}
 enquiryForm.addEventListener('submit',event=>{
  event.preventDefault();
  if(!enquiryForm.reportValidity())return;
