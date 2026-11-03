@@ -198,7 +198,11 @@ em {
 
 .hero-photo {
   min-width: 0;
-  height: 610px;
+  height: auto;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-photo > img {

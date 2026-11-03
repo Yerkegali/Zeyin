@@ -28,6 +28,37 @@ function markActiveSection(){
 const sectionObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>visibleSections.set(entry.target,entry));markActiveSection()},{rootMargin:'-12% 0px -58% 0px',threshold:[0,.15,.35,.6]});
 navigationSections.forEach(section=>sectionObserver.observe(section));
 window.addEventListener('hashchange',markActiveSection);markActiveSection();
+const shortVideos=[...document.querySelectorAll('.video-frame iframe, .hero-video-iframe, .overview-frame iframe')];
+const setVideoCommand=(iframe,command)=>{if(!iframe||!iframe.contentWindow)return;iframe.contentWindow.postMessage(JSON.stringify({event:'command',func:command,args:[]}),'*');};
+let activeShortVideo=null;
+function syncShortAutoplay(){
+ if(!shortVideos.length){return;}
+ if(document.hidden){if(activeShortVideo){setVideoCommand(activeShortVideo,'pauseVideo');activeShortVideo=null;}return;}
+ const viewportTop=window.innerHeight*0.8;
+ const visibleVideos=[...shortVideos].filter(iframe=>{
+  const rect=iframe.getBoundingClientRect();
+  return rect.top < viewportTop && rect.bottom > 0;
+ }).sort((a,b)=>Math.abs(a.getBoundingClientRect().top)-Math.abs(b.getBoundingClientRect().top));
+ const selected=visibleVideos[0]||null;
+ if(!selected){if(activeShortVideo){setVideoCommand(activeShortVideo,'pauseVideo');activeShortVideo=null;}return;}
+ if(activeShortVideo && activeShortVideo!==selected) setVideoCommand(activeShortVideo,'pauseVideo');
+ activeShortVideo=selected;
+ setTimeout(()=>{
+  if(activeShortVideo!==selected||document.hidden)return;
+  setVideoCommand(selected,'playVideo');
+ },220);
+}
+if(shortVideos.length){
+ const shortObserver=new IntersectionObserver(entries=>{
+  const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio || Math.abs(a.boundingClientRect.top)-Math.abs(b.boundingClientRect.top));
+  if(visible.length) syncShortAutoplay();
+ },{threshold:[0.2,0.5],rootMargin:'0px 0px -12% 0px'});
+ shortVideos.forEach(iframe=>shortObserver.observe(iframe));
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&activeShortVideo){setVideoCommand(activeShortVideo,'pauseVideo');activeShortVideo=null;}else syncShortAutoplay();});
+ window.addEventListener('scroll',syncShortAutoplay,{passive:true});
+ window.addEventListener('resize',syncShortAutoplay);
+ syncShortAutoplay();
+}
 const menuDays=['Дүйсенбі','Сейсенбі','Сәрсенбі','Бейсенбі','Жұма'];
 const dayMeals=[
  [{image:'assets/menu/day-1-meal-1.jpg',text:"Қайнатылған жұмыртқа, қызанақ пен қияр, нан, компот"},{image:'assets/menu/day-1-meal-2.jpg',text:"Сұлы печеньесі"},{image:'assets/menu/day-1-meal-3.jpg',text:"Маш сорпасы, ет қосылған макарон, ашытылған қырыққабат, компот, нан"},{image:'assets/menu/day-1-meal-4.jpg',text:"Картоп қосылған бәліш"},{image:'assets/menu/day-1-meal-5.jpg',text:"Сұлы ботқасы, компот, нан"}],
